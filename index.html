@@ -221,6 +221,7 @@ section{position:relative;padding:clamp(80px,11vw,160px) 0}
 .case:first-child{border-top:0;padding-top:0}
 .case.flip .case-info{order:2}
 .case-info{position:sticky;top:96px;align-self:start}
+body.building .case-info{position:relative;top:0}  /* build boxes/guides sit in page coords: sticky text would drift away from them */
 .case-logo{display:flex;width:fit-content;align-items:center;justify-content:center;height:66px;padding:0 22px;background:var(--paper);border-radius:12px;margin-bottom:30px}
 .case-logo img{max-height:30px;max-width:170px}
 .case-info .k{color:var(--mu)}
