@@ -1454,7 +1454,10 @@ async function runBuild(){
   const fly=(ag,x,y,ms)=>{ag.el.style.transitionDuration=`${ms}ms,.4s`;ag.el.style.transform=`translate(${x}px,${y}px)`;ag.x=x;ag.y=y;return sleep(ms)};
   const target=el=>{const r=el.getBoundingClientRect(),fx=!!el.closest('.nav');return[r.left+r.width*(.15+Math.random()*.7),r.top+(fx?0:scrollY)+r.height*(.2+Math.random()*.6)]};
   /* ---------- designer actions ---------- */
-  const D=ms=>ms*SPD,EASE='cubic-bezier(.45,0,.2,1)';
+  // hero + about are built slower and by a smaller crew, so every step can be followed;
+  // ZK drops back to 1 once they are finished (nothing else runs at the same time)
+  const IK=+q.get('introk')||1.7,IA=7;let ZK=IK;
+  const D=ms=>ms*SPD*ZK,EASE='cubic-bezier(.45,0,.2,1)';
   const touched=new Set();
   const clean=el=>['transition','transform','opacity','filter','boxShadow','transformOrigin'].forEach(p=>{el.style[p]=''});
   const travel=(ag,x,y)=>D(Math.min(620,220+Math.hypot(x-ag.x,y-ag.y)*.42));
@@ -1583,7 +1586,18 @@ async function runBuild(){
   const DRG='.tile,.reel,.hero-person';
   const MQ='.about-grid>*,.browser,.case-logo,.facts,.more-row';
   let hi=0;
+  // hero portrait: a guide is pulled to its edge and a frame drawn before the photo is dragged in
+  const doPortrait=async(el,ag)=>{await dragGuide(ag,el,'v');if(done)return;
+    const r=boxOf(el),x0=r.left,y0=r.top+scrollY,x1=r.right,y1=Math.min(r.bottom,innerHeight)+scrollY;
+    await fly(ag,x0,y0,travel(ag,x0,y0));if(done)return;act(ag,'Frame');
+    const b=document.createElement('div');b.className='mq';b.style.cssText=`left:${x0}px;top:${y0}px;width:0;height:0`;b.innerHTML='<b></b>';document.body.append(b);void b.offsetWidth;
+    const T=D(620);b.style.transition=`width ${T}ms ${EASE},height ${T}ms ${EASE},opacity .3s`;b.style.width=(x1-x0)+'px';b.style.height=(y1-y0)+'px';b.firstChild.textContent=`${Math.round(r.width)} × ${Math.round(r.height)}`;
+    await fly(ag,x1,y1,T);act(ag,'');setTimeout(()=>{b.classList.add('out');setTimeout(()=>b.remove(),350)},D(700));
+    if(done){b.remove();return}return doDrag(el,ag)};
+  const INTRO=el=>!!el.closest('.nav,.hero,.brands,#about');
   const perform=el=>ag=>{const src=dupSrc(el);
+    if(el.matches('.hero-person'))return doPortrait(el,ag);
+    if(el.matches('.hero-word,.hero-nm')){return(async()=>{await dragGuide(ag,el,hi%2?'v':'h');if(!done)await doHeading(el,ag,hi++)})()}
     if(el.matches(HEAD))return doHeading(el,ag,hi++);
     if(src)return doDup(el,ag,src);
     if(el.matches(DRG))return doDrag(el,ag);
@@ -1593,13 +1607,17 @@ async function runBuild(){
   // the hero (and nav) is finished first: nobody starts on the next section, and the
   // camera stays put, until every hero layer is placed
   const heroN=L.filter(el=>el.closest('.hero,.nav')).length;let heroDone=0,heroReady=heroN?Infinity:0;
-  const run=async ag=>{await sleep(300+Math.random()*900);
+  const introN=L.filter(INTRO).length;let introDone=0,introReady=introN?Infinity:0;
+  const run=async ag=>{const ai=agents.indexOf(ag);await sleep(300+Math.random()*900);
     while(!done&&next<L.length){
       if(next>=heroN&&performance.now()<heroReady){await sleep(80);continue}
+      if(next<introN&&ai>=IA){await sleep(120);continue}        // small crew on hero + about
+      if(next>=introN&&performance.now()<introReady){await sleep(80);continue}
       // only start layers that are on screen or just below it, so the steps can be seen
       if(L[next].getBoundingClientRect().top>innerHeight*1.7){await sleep(80);continue}
       const el=L[next++],isHero=next<=heroN;await perform(el)(ag);if(done)break;main++;
       if(isHero&&++heroDone===heroN)heroReady=performance.now()+D(600);
+      if(INTRO(el)&&++introDone===introN){introReady=performance.now()+D(500);setTimeout(()=>{ZK=1},D(500))}
       await sleep(D(70+Math.random()*150))}};
   // camera follows the oldest layer still being worked on (skipped zones fly past)
   // camera: keeps the oldest unfinished layer in view and moves at a capped, even speed
@@ -1630,7 +1648,9 @@ async function runBuild(){
     await sleep(380);if(done)return;
     if(manBy)reveal(manBy,T);
     st.textContent='✓ All changes saved · Published';
-    await sleep(900);finish(true)};
+    // hold on the finished manifesto long enough to read it before gliding back
+    const words=manP.textContent.trim().split(/\s+/).length;
+    await sleep(Math.max(3500,Math.min(6000,words*170)));finish(true)};
 
   const finish=async natural=>{if(done)return;done=true;phase='done';clearInterval(hudT);
     ALL.forEach(el=>el.classList.add('on'));[...chars,...mChars].forEach(c=>{c.style.opacity=''});
