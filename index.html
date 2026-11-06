@@ -448,6 +448,7 @@ html.intro :is(.nav,.hero,section,.brands)>*{visibility:hidden}
 .building .hero-word.ly,.building .hero-person.ly{transform:translateX(-50%) translateY(14px)}
 .building .hero-word.ly.on,.building .hero-person.ly.on{transform:translateX(-50%)}
 .building .nav{top:44px}
+.building .hero>.ab-label{top:128px}   /* follows the nav down while the workspace bar is shown */
 .nav{transition:color .35s,background .35s,border-color .35s,opacity .6s,top .5s}
 .bagents{position:absolute;left:0;top:0;width:0;height:0;z-index:95;pointer-events:none}
 .bc{position:absolute;left:0;top:0;transition-property:transform,opacity;transition-timing-function:cubic-bezier(.45,0,.2,1),ease;will-change:transform}
@@ -507,7 +508,7 @@ x-t,x-w{display:inline}
 .ws-skip{position:absolute;right:16px;bottom:16px;pointer-events:auto;background:rgba(22,22,22,.92);border:1px solid rgba(241,237,230,.16);color:#c2bcb3;padding:9px 13px;border-radius:8px;transition:opacity .3s,color .2s}
 .ws-skip:hover{color:#fff}
 .ws.out .ws-skip{opacity:0}
-.ws-snd{position:absolute;left:16px;bottom:16px;pointer-events:auto;display:flex;align-items:center;gap:8px;background:rgba(22,22,22,.92);border:1px solid rgba(241,237,230,.16);color:#c2bcb3;padding:9px 13px;border-radius:8px;cursor:pointer;transition:opacity .3s,color .2s,border-color .2s}
+.ws-snd{pointer-events:auto;display:flex;align-items:center;gap:7px;height:28px;background:rgba(241,237,230,.06);border:1px solid rgba(241,237,230,.18);color:#c2bcb3;padding:0 11px;border-radius:6px;margin-right:6px;font-size:11px;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s}
 .ws-snd svg{width:15px;height:15px;flex:none}
 .ws-snd:hover,.ws-snd.on{color:#fff}
 .ws-snd.on{border-color:rgba(255,74,28,.7)}
@@ -517,7 +518,7 @@ x-t,x-w{display:inline}
 @keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
 .ws-snd.ask{animation:sndp 1.6s ease-in-out infinite}
 @keyframes sndp{50%{border-color:var(--red);color:#fff}}
-.ws.out .ws-snd{opacity:0;pointer-events:none}
+.ws.out .ws-snd{pointer-events:none}
 
 /* collaborator cursors (Figma multiplayer style) */
 .mp{position:fixed;left:0;top:0;z-index:95;pointer-events:none;opacity:0;transition-property:transform,opacity;transition-timing-function:cubic-bezier(.45,0,.2,1),ease;transition-duration:.55s,.3s;will-change:transform}
@@ -548,7 +549,7 @@ x-t,x-w{display:inline}
   .ws-top .c{font-size:10.5px}
   .ws-frame{inset:52px 6px 6px}
   .ws-skip{bottom:60px;right:12px;padding:7px 10px}
-  .ws-snd{bottom:60px;left:12px;padding:7px 10px}
+  .ws-snd{padding:0 8px;margin-right:2px}
   .bhud{bottom:12px;padding:8px 13px 9px;font-size:11px;gap:7px}
 }
 @media (prefers-reduced-motion:reduce){.ch-head .ch-t{clip-path:none}.rv:not(.in) img{filter:none;transform:none}}
@@ -1688,7 +1689,7 @@ async function runBuild(){
   const VOL=.6;let sndOn=false,fadeIv=0;
   const fade=(to,ms,end)=>{clearInterval(fadeIv);const from=snd.volume,t0=performance.now();
     fadeIv=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);snd.volume=Math.max(0,Math.min(1,from+(to-from)*k));if(k>=1){clearInterval(fadeIv);end&&end()}},40)};
-  const sb=document.createElement('button');sb.type='button';sb.className='ws-snd mono';ws.append(sb);
+  const sb=document.createElement('button');sb.type='button';sb.className='ws-snd mono';ws.querySelector('.ws-top .r').prepend(sb);
   const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/>';
   const paint=()=>{sb.classList.toggle('on',sndOn);sb.setAttribute('aria-pressed',sndOn);
     sb.innerHTML=sndOn?`<span class="eq"><i></i><i></i><i></i></span><span>Music on</span>`:`${SPK}<path d="m22 9-6 6M16 9l6 6"/></svg><span>Play music</span>`};
