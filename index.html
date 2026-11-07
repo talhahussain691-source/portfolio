@@ -149,6 +149,14 @@ section{position:relative;padding:clamp(80px,11vw,160px) 0}
 .brands ul{display:grid;grid-template-columns:repeat(5,1fr)}
 .brands li{height:76px;display:grid;place-items:center;border-left:1px solid var(--ln)}
 .brands li:nth-child(n+6){border-top:1px solid var(--ln)}
+/* more than 10 logos: one moving row (the list is rendered twice for a seamless loop) */
+.br-track{min-width:0}
+.br-track.on{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.brands ul.marq{display:flex;width:max-content;animation:brandsMq var(--dur,50s) linear infinite}
+.brands ul.marq li{flex:none;width:200px;border-top:0;border-left:1px solid var(--ln)}
+.br-track:hover ul.marq,.building .brands ul.marq{animation-play-state:paused}
+@keyframes brandsMq{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.brands ul.marq{animation:none}.br-track.on{overflow-x:auto}}
 .brands img{max-height:30px;max-width:68%;opacity:.78;transition:opacity .35s,transform .35s}
 .brands li:hover img{opacity:1;transform:scale(1.06)}
 
@@ -591,6 +599,7 @@ x-t,x-w{display:inline}
   .brands .wrap{grid-template-columns:1fr;gap:6px}
   .brands ul{grid-template-columns:repeat(2,1fr)}
   .brands li,.brands li:nth-child(n+6){border-left:0;border-top:0;height:64px}
+  .brands ul.marq li{width:150px;border-left:1px solid var(--ln)}
   .about-grid{grid-template-columns:1fr}
   .statement{text-indent:0}
   .toc-list a{grid-template-columns:34px 1fr 26px;gap:10px;padding:10px 0}
@@ -695,7 +704,7 @@ x-t,x-w{display:inline}
 <div class="brands light" data-ch="(00) About">
   <div class="wrap">
     <span class="mono mu">(Brands featured)</span>
-    <ul id="brands"></ul>
+    <div class="br-track"><ul id="brands"></ul></div>
   </div>
 </div>
 
@@ -939,7 +948,8 @@ const U='https://talhahussain.in/wp-content/uploads/';
 const BRANDS=[['Lattafa','2025/12/L-BLACK--2048x691.png'],['Lubrex','2025/12/Asset-1--2048x526.png'],['Royal Super','2025/12/BLACK-ROYAL-WITH-R--1024x343.png'],['Proxil','2025/12/ORIGNAL-1024x296.png'],['Cadbury (concept)','2025/12/Asset-1-1-1-1024x435.png'],
   // local logos: [name, path, max height in px for squarer marks]
   ['Norton Business University','img/brands/norton.webp',40],['Burgers Restaurant','img/brands/burgers.webp',44],['REDI','img/brands/redi.webp',48],
-  ['Circuler','img/brands/circuler.webp',32],['Center Cling','img/brands/center-cling.webp',42]];
+  ['Circuler','img/brands/circuler.webp',32],['Center Cling','img/brands/center-cling.webp',42],
+  ['Cuisine Bronze & Bloom','img/brands/cuisine.webp',46],['Eléctra Wellness Gym','img/brands/electra.webp',38],['BRUH','img/brands/bruh.webp',44]];
 
 const MARKS=['15.59.34-1-1','21.46.39-2','12.10.03-2-logo','12.17.14-2','12.51.20-2','13.18.37-3','16.05.46-3-2','20.32.43-1-scaled','21.18.25-2-scaled','21.46.39','12.10.03-1-logo','12.51.20-1','12.17.14-3','13.18.37-2','21.18.25-scaled']
   .map(s=>'2026/07/Untitled-18-July-2026-at-'+s+'.jpg');
@@ -1063,7 +1073,10 @@ const G={};   // galleries for the lightbox
 const tile=(g,i,src,alt,cls='',cap='')=>`<figure class="tile${cls}" data-g="${g}" data-i="${i}">${cap?`<span class="cap">${esc(cap)}</span>`:''}<img src="${U+src}" alt="${esc(alt)}" loading="lazy" decoding="async"></figure>`;
 
 // brands strip
-$('#brands').innerHTML=BRANDS.map(([n,s,h])=>`<li title="${esc(n)}"><img src="${/^img\//.test(s)?s:U+s}" alt="${esc(n)} logo" loading="lazy"${h?` style="max-height:${h}px"`:''}></li>`).join('');
+{const li=(dup)=>([n,s,h])=>`<li${dup?' class="dup" aria-hidden="true"':''} title="${esc(n)}"><img src="${/^img\//.test(s)?s:U+s}" alt="${dup?'':esc(n)+' logo'}" loading="lazy"${h?` style="max-height:${h}px"`:''}></li>`;
+  const ul=$('#brands'),marq=BRANDS.length>10;
+  ul.innerHTML=BRANDS.map(li(false)).join('')+(marq?BRANDS.map(li(true)).join(''):'');
+  if(marq){ul.classList.add('marq');ul.style.setProperty('--dur',BRANDS.length*4+'s');ul.parentElement.classList.add('on')}}
 
 // index + menu
 $('#toc').innerHTML=CHAPTERS.map((c,i)=>`<li class="rv"><a href="#${c.id}"><span class="n mono">${pad(i+1)}</span><span class="t">${esc(c.t)}</span><span class="c mono">${esc(c.c)}</span><span class="ar">↘</span></a></li>`).join('');
@@ -1430,7 +1443,7 @@ async function runBuild(){
   const SEL='.nav .logo,.nav .now,.nav-r>*,.ab-label,.hero-word,.hero-person,.hero-hello,.hero-nm,.hero-role,.hero-lead,.hero-ctas>*,.hero-avail,.hstat,.hero-cv,.hero-bar>*,'+
     '.brands .mono,.brands li,.sec-label,.statement,.about-grid>*,.toc-title,.toc-list li,.ch-head>*,.sub,.tile,.more-row,.case-info>*,.swatch,.broch-head,'+
     '.web-tabs li,.browser,.web-note,.event-info>*,.poster-info>*,.reel,.manifesto p,.manifesto .by';
-  const ALL=[...new Set(document.querySelectorAll(SEL))].filter(el=>el.getClientRects().length>0&&!SKIP.some(z=>z.contains(el)));
+  const ALL=[...new Set(document.querySelectorAll(SEL))].filter(el=>el.getClientRects().length>0&&!el.closest('.dup')&&!SKIP.some(z=>z.contains(el)));
   const man=$('.manifesto'),manP=man.querySelector('p'),manBy=man.querySelector('.by');
   const L=ALL.filter(el=>!man.contains(el));                    // built by the team
   const mChars=splitChars(manP);                               // typed in the finale
